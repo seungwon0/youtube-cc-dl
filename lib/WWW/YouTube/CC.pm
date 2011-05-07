@@ -22,11 +22,11 @@ WWW::YouTube::CC - Download and Convert YouTube Closed Caption
 
 =head1 VERSION
 
-Version 0.1.0
+Version 0.1.1
 
 =cut
 
-our $VERSION = '0.1.0';
+our $VERSION = '0.1.1';
 
 =head1 SYNOPSIS
 

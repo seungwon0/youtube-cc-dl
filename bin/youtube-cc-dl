@@ -20,9 +20,6 @@ use IO::Prompt;
 
 use WWW::YouTube::CC;
 
-my @urls = @ARGV;
-undef @ARGV;    # For IO::Prompt
-
 sub print_version {
     say "youtube-cc-dl $WWW::YouTube::CC::VERSION";
     return;
@@ -49,7 +46,6 @@ Argument:
 Examples:
 
   youtube-cc-dl 'http://www.youtube.com/watch?v=tuRYbBvOMRo'
-  youtube-cc-dl < url_list
 
 Please report bugs to <seungwon0@gmail.com>.
 END_HELP
@@ -74,19 +70,8 @@ if ($print_version) {
     exit;
 }
 
-# youtube-cc-dl < url_list
-if ( !-t STDIN ) {
-    while ( defined( my $line = <STDIN> ) ) {
-        chomp $line;
-
-        $line =~ s/[ #] .*//xms;    # Remove comment
-        $line =~ s/\s+//xmsg;       # Trim spaces
-
-        if ( $line ne q{} ) {
-            push @urls, $line;
-        }
-    }
-}
+my @urls = @ARGV;
+undef @ARGV;    # For IO::Prompt
 
 if ( @urls < 1 ) {
     print_help();
@@ -117,7 +102,8 @@ for my $url (@urls) {
     my $name = $cc_list[0]{name};
     my $lang = $cc_list[0]{lang_code};
     if ( @cc_list > 1 ) {
-	# Print closed caption list
+
+        # Print closed caption list
         for my $idx ( 0 .. $#cc_list ) {
             printf "[%d] name='%s' / lang_code='%s'\n",
                 $idx + 1, $cc_list[$idx]{name}, $cc_list[$idx]{lang_code};
