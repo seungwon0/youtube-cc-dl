@@ -4,7 +4,7 @@ use strict;
 
 use warnings;
 
-use 5.006;
+use 5.010;
 
 use Carp qw< carp >;
 
@@ -13,6 +13,8 @@ use English qw< -no_match_vars >;
 use LWP::Simple qw< get >;
 
 use HTML::Entities qw< decode_entities >;
+
+use Encode < encode_utf8 >;
 
 =head1 NAME
 
@@ -180,7 +182,7 @@ sub convert_to_srt {
     for my $text (@texts) {
 
         # Subtitle number
-        print {$fh} "$subtitle_num\n";
+        say {$fh} $subtitle_num;
         $subtitle_num++;
 
         # Start time --> End time
@@ -191,17 +193,18 @@ sub convert_to_srt {
         my $end = $start + $dur;
         $start = convert_to_srt_time_format($start);
         $end   = convert_to_srt_time_format($end);
-        print {$fh} "$start --> $end\n";
+        say {$fh} "$start --> $end";
 
         # Text of subtitle (one or more lines)
         $text =~ s/.+? >//xms;
         $text =~ tr/\n/ /;
         $text = decode_entities($text);
         $text = decode_entities($text);
-        print {$fh} "$text\n";
+        $text = encode_utf8($text);
+        say {$fh} $text;
 
         # Blank line
-        print {$fh} "\n";
+        say {$fh} q{};
     }
 
     close $fh;
