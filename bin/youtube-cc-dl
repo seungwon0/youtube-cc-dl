@@ -16,9 +16,12 @@ use autodie;
 
 use Getopt::Long;
 
+use IO::Prompt;
+
 use WWW::YouTube::CC;
 
 my @urls = @ARGV;
+undef @ARGV;    # For IO::Prompt
 
 sub print_version {
     say "youtube-cc-dl $WWW::YouTube::CC::VERSION";
@@ -59,7 +62,7 @@ my $print_version;
 GetOptions(
     'help'    => \$print_help,
     'version' => \$print_version,
-) or die "GetOptions() failed!\n";
+) or die "GetOptions failed.\n";
 
 if ($print_help) {
     print_help();
@@ -113,6 +116,23 @@ for my $url (@urls) {
     # Select a closed caption
     my $name = $cc_list[0]{name};
     my $lang = $cc_list[0]{lang_code};
+    if ( @cc_list > 1 ) {
+	# Print closed caption list
+        for my $idx ( 0 .. $#cc_list ) {
+            printf "[%d] name='%s' / lang_code='%s'\n",
+                $idx + 1, $cc_list[$idx]{name}, $cc_list[$idx]{lang_code};
+        }
+
+        my $num = 1;
+        my $max = @cc_list;
+    PROMPT:
+        while (1) {
+            $num = prompt( "Select a closed caption (1-$max): ", -i ) // 1;
+            last PROMPT if $num >= 1 && $num <= $max;
+        }
+        $name = $cc_list[ $num - 1 ]{name};
+        $lang = $cc_list[ $num - 1 ]{lang_code};
+    }
 
     # Download closed caption
     $xml_ref = WWW::YouTube::CC::download_cc( $v_param, $name, $lang );
@@ -127,7 +147,7 @@ for my $url (@urls) {
     open my $fh, '>', $file_name;
     print {$fh} ${$srt_ref};
     close $fh;
-    say "Successfully downloaded '$file_name'.";
+    say "Successfully saved as '$file_name'.";
 
     say q{} if @urls > 1;
 }
