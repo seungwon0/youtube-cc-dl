@@ -1,5 +1,8 @@
 Revision history for youtube-cc-dl
 
+0.1.1    Sat May 7 23:17:13 2011 +0900
+         Do not read URLs from STDIN.
+
 0.1.0    Sat May 7 22:39:57 2011 +0900
          Fixed Build.PL.
          Added closed caption selection feature.
