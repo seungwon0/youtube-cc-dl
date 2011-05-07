@@ -1,5 +1,9 @@
 Revision history for youtube-cc-dl
 
-0.01    Date/time
-        First version, released on an unsuspecting world.
+0.1.0    Sat May 7 22:39:57 2011 +0900
+         Fixed Build.PL.
+         Added closed caption selection feature.
+         Fixed a warning.
 
+0.0.1    Sat May 7 21:16:59 2011 +0900
+         First version, released on an unsuspecting world.
