@@ -1,0 +1,133 @@
+#!/usr/bin/env perl
+#
+# youtube-cc-dl - Download YouTube Closed Caption
+#
+# Seungwon Jeong <seungwon0@gmail.com>
+#
+# Copyright (C) 2011 by Seungwon Jeong
+
+use strict;
+
+use warnings;
+
+use 5.010;
+
+use autodie;
+
+use Getopt::Long;
+
+use WWW::YouTube::CC;
+
+my @urls = @ARGV;
+
+sub print_version {
+    say "youtube-cc-dl $WWW::YouTube::CC::VERSION";
+    return;
+}
+
+sub print_help {
+    print_version();
+
+    print <<'END_HELP';
+
+Usage:
+
+  youtube-cc-dl [options] URL...
+
+Options:
+
+  -h, --help            print this help text and exit
+  -v, --version         print program version and exit
+
+Argument:
+
+  URL                   URL of a YouTube video
+
+Examples:
+
+  youtube-cc-dl 'http://www.youtube.com/watch?v=tuRYbBvOMRo'
+  youtube-cc-dl < url_list
+
+Please report bugs to <seungwon0@gmail.com>.
+END_HELP
+    return;
+}
+
+my $print_help;
+my $print_version;
+
+GetOptions(
+    'help'    => \$print_help,
+    'version' => \$print_version,
+) or die "GetOptions() failed!\n";
+
+if ($print_help) {
+    print_help();
+    exit;
+}
+
+if ($print_version) {
+    print_version();
+    exit;
+}
+
+# youtube-cc-dl < url_list
+if ( !-t STDIN ) {
+    while ( defined( my $line = <STDIN> ) ) {
+        chomp $line;
+
+        $line =~ s/[ #] .*//xms;    # Remove comment
+        $line =~ s/\s+//xmsg;       # Trim spaces
+
+        if ( $line ne q{} ) {
+            push @urls, $line;
+        }
+    }
+}
+
+if ( @urls < 1 ) {
+    print_help();
+    exit 2;
+}
+
+URL:
+for my $url (@urls) {
+    say $url if @urls > 1;
+
+    # Get v_param
+    my $v_param = WWW::YouTube::CC::get_v_param($url);
+    if ( !defined $v_param ) {
+        warn "Invalid URL\n";
+        next URL;
+    }
+
+    # Download and parse closed caption list
+    my $xml_ref = WWW::YouTube::CC::download_cc_list($v_param);
+    next URL if !defined $xml_ref;
+    my @cc_list = WWW::YouTube::CC::parse_cc_list($xml_ref);
+    if ( @cc_list == 0 ) {
+        warn "This video seems to have no closed caption.\n";
+        next URL;
+    }
+
+    # Select a closed caption
+    my $name = $cc_list[0]{name};
+    my $lang = $cc_list[0]{lang_code};
+
+    # Download closed caption
+    $xml_ref = WWW::YouTube::CC::download_cc( $v_param, $name, $lang );
+    next URL if !defined $xml_ref;
+
+    # Convert closed caption
+    my $srt_ref = WWW::YouTube::CC::convert_to_srt($xml_ref);
+    next URL if !defined $srt_ref;
+
+    # Save closed caption into file
+    my $file_name = $v_param . '.srt';
+    open my $fh, '>', $file_name;
+    print {$fh} ${$srt_ref};
+    close $fh;
+    say "Successfully downloaded '$file_name'.";
+
+    say q{} if @urls > 1;
+}
