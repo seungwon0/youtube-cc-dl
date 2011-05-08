@@ -53,6 +53,85 @@ END_HELP
     return;
 }
 
+sub get_v_param {
+    my ($arg) = @_;
+
+    return if !defined $arg;
+
+    # Argument is a v_param
+    return $arg if WWW::YouTube::CC::is_valid_v_param($arg);
+
+    # Argument is a YouTube video URL
+    my $v_param = WWW::YouTube::CC::get_v_param_from_url($arg);
+    if ( !defined $v_param ) {
+        warn "Invalid YouTube video URL: $arg\n";
+        return;
+    }
+
+    return $v_param;
+}
+
+sub get_cc_list {
+    my ($v_param) = @_;
+
+    return if !defined $v_param;
+
+    my $xml_ref = WWW::YouTube::CC::download_cc_list($v_param);
+    return if !defined $xml_ref;
+
+    my @cc_list = WWW::YouTube::CC::parse_cc_list($xml_ref);
+    if ( @cc_list == 0 ) {
+        warn "This video seems to have no closed caption.\n";
+        return;
+    }
+
+    return @cc_list;
+}
+
+sub select_cc {
+    my ($cc_list_ref) = @_;
+
+    return if !defined $cc_list_ref;
+
+    my $num = @{$cc_list_ref};
+
+    return if $num == 0;
+
+    return $cc_list_ref->[0] if $num == 1;
+
+    # Print closed caption list
+    for my $i ( 1 .. $num ) {
+        my $name = $cc_list_ref->[ $i - 1 ]{name};
+        my $lang = $cc_list_ref->[ $i - 1 ]{lang_code};
+        say "[$i] name='$name' / lang_code='$lang'";
+    }
+
+PROMPT:
+    while (1) {
+        my $choice = prompt( "Select a closed caption (1-$num): ", -ti );
+        next PROMPT if !defined $choice;
+        if ( $choice >= 1 && $choice <= $num ) {
+            return $cc_list_ref->[ $choice - 1 ];
+        }
+    }
+
+    return;
+}
+
+sub get_srt {
+    my ( $v_param, $cc_ref ) = @_;
+
+    return if !defined $v_param || !defined $cc_ref;
+
+    my $name = $cc_ref->{name};
+    my $lang = $cc_ref->{lang_code};
+
+    my $xml_ref = WWW::YouTube::CC::download_cc( $v_param, $name, $lang );
+    return if !defined $xml_ref;
+
+    return WWW::YouTube::CC::convert_to_srt($xml_ref);
+}
+
 my $print_help;
 my $print_version;
 
@@ -83,55 +162,19 @@ for my $idx ( 0 .. $#ARGV ) {
     }
 
     # Get v_param
-    my $v_param;
-    if ( WWW::YouTube::CC::is_valid_v_param( $ARGV[$idx] ) ) {
-        $v_param = $ARGV[$idx];
-    }
-    else {
-        $v_param = WWW::YouTube::CC::get_v_param_from_url( $ARGV[$idx] );
-        if ( !defined $v_param ) {
-            warn "Invalid YouTube video URL: $ARGV[$idx]\n";
-            next ARG;
-        }
-    }
+    my $v_param = get_v_param( $ARGV[$idx] );
+    next ARG if !defined $v_param;
 
     # Download and parse closed caption list
-    my $xml_ref = WWW::YouTube::CC::download_cc_list($v_param);
-    next ARG if !defined $xml_ref;
-    my @cc_list = WWW::YouTube::CC::parse_cc_list($xml_ref);
-    if ( @cc_list == 0 ) {
-        warn "This video seems to have no closed caption.\n";
-        next ARG;
-    }
+    my @cc_list = get_cc_list($v_param);
+    next ARG if @cc_list == 0;
 
     # Select a closed caption
-    my $name = $cc_list[0]{name};
-    my $lang = $cc_list[0]{lang_code};
-    if ( @cc_list > 1 ) {
+    my $cc_ref = select_cc( \@cc_list );
+    next ARG if !defined $cc_ref;
 
-        # Print closed caption list
-        for my $idx ( 0 .. $#cc_list ) {
-            printf "[%d] name='%s' / lang_code='%s'\n",
-                $idx + 1, $cc_list[$idx]{name}, $cc_list[$idx]{lang_code};
-        }
-
-        my $num = 1;
-        my $max = @cc_list;
-    PROMPT:
-        while (1) {
-            $num = prompt( "Select a closed caption (1-$max): ", -ti ) // 1;
-            last PROMPT if $num >= 1 && $num <= $max;
-        }
-        $name = $cc_list[ $num - 1 ]{name};
-        $lang = $cc_list[ $num - 1 ]{lang_code};
-    }
-
-    # Download closed caption
-    $xml_ref = WWW::YouTube::CC::download_cc( $v_param, $name, $lang );
-    next ARG if !defined $xml_ref;
-
-    # Convert closed caption
-    my $srt_ref = WWW::YouTube::CC::convert_to_srt($xml_ref);
+    # Download and convert closed caption
+    my $srt_ref = get_srt( $v_param, $cc_ref );
     next ARG if !defined $srt_ref;
 
     # Save closed caption into file
