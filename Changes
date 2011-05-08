@@ -1,5 +1,10 @@
 Revision history for youtube-cc-dl
 
+0.2.0    Sun May 8 20:37:23 2011 +0900
+         Support v_param as well as URL.
+         Added is_valid_v_param subroutine.
+         Fixed typos.
+
 0.1.1    Sat May 7 23:17:13 2011 +0900
          Do not read URLs from STDIN.
 
