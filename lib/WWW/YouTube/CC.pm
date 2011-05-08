@@ -22,11 +22,11 @@ WWW::YouTube::CC - Download and Convert YouTube Closed Caption
 
 =head1 VERSION
 
-Version 0.1.1
+Version 0.2.0
 
 =cut
 
-our $VERSION = '0.1.1';
+our $VERSION = '0.2.0';
 
 =head1 SYNOPSIS
 
@@ -53,6 +53,24 @@ our $VERSION = '0.1.1';
 
 =head1 SUBROUTINES/METHODS
 
+=head2 is_valid_v_param
+
+Returns 1 if the give v_param is valid.
+
+=cut
+
+sub is_valid_v_param {
+    my ($v_param) = @_;
+
+    return if !defined $v_param;
+
+    return if length $v_param != 11;
+
+    return if $v_param =~ m{[:/.?=&]}xms;
+
+    return 1;
+}
+
 =head2 get_v_param
 
 Returns v param of the given YouTube URL.
@@ -66,7 +84,11 @@ sub get_v_param {
 
     return if $url !~ /[?&] v = (?<v_param>[^&]+)/xmsi;
 
-    return $LAST_PAREN_MATCH{v_param};
+    my $v_param = $LAST_PAREN_MATCH{v_param};
+
+    return if !is_valid_v_param($v_param);
+
+    return $v_param
 }
 
 =head2 download_cc_list
