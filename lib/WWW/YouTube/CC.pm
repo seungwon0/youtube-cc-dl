@@ -14,7 +14,7 @@ use LWP::Simple qw< get >;
 
 use HTML::Entities qw< decode_entities >;
 
-use Encode < encode_utf8 >;
+use Encode qw< encode_utf8 >;
 
 =head1 NAME
 
