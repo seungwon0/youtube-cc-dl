@@ -35,7 +35,7 @@ our $VERSION = '0.2.0';
     my $url = 'http://www.youtube.com/watch?v=kKS12iGFyEA';
 
     # Get v_param
-    my $v_param = WWW::YouTube::CC::get_v_param($url);
+    my $v_param = WWW::YouTube::CC::get_v_param_from_url($url);
 
     # Download and parse closed caption list
     my $xml_ref = WWW::YouTube::CC::download_cc_list($v_param);
@@ -71,13 +71,13 @@ sub is_valid_v_param {
     return 1;
 }
 
-=head2 get_v_param
+=head2 get_v_param_from_url
 
 Returns v param of the given YouTube URL.
 
 =cut
 
-sub get_v_param {
+sub get_v_param_from_url {
     my ($url) = @_;
 
     return if !defined $url;

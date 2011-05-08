@@ -5,7 +5,8 @@ lib/WWW/YouTube/CC.pm
 MANIFEST			This list of files
 README
 t/00-load.t
-t/02-get_v_param.t
+t/01-is_valid_v_param.t
+t/02-get_v_param_from_url.t
 t/03-download_cc_list.t
 t/04-parse_cc_list.t
 t/05-download_cc.t

@@ -88,7 +88,7 @@ for my $idx ( 0 .. $#ARGV ) {
         $v_param = $ARGV[$idx];
     }
     else {
-        $v_param = WWW::YouTube::CC::get_v_param( $ARGV[$idx] );
+        $v_param = WWW::YouTube::CC::get_v_param_from_url( $ARGV[$idx] );
         if ( !defined $v_param ) {
             warn "Invalid YouTube video URL: $ARGV[$idx]\n";
             next ARG;
